@@ -5,12 +5,12 @@ import CheckoutProduct from "./CheckoutProduct";
 import { Link, useHistory } from "react-router-dom";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import CurrencyFormat from "react-currency-format";
-import { getBasketTotal } from "./reducer";
+import { getCartTotal } from "./reducer";
 import axios from './axios';
 import { db } from "./firebase";
 
 function Payment() {
-    const [{ basket, user }, dispatch] = useStateValue();
+    const [{ cart, user }, dispatch] = useStateValue();
     const history = useHistory();
 
     const stripe = useStripe();
@@ -28,13 +28,13 @@ function Payment() {
             const response = await axios({
                 method: 'post',
                 // Stripe expects the total in a currencies subunits
-                url: `/payments/create?total=${getBasketTotal(basket) * 100}`
+                url: `/payments/create?total=${getCartTotal(cart) * 100}`
             });
             setClientSecret(response.data.clientSecret)
         }
 
         getClientSecret();
-    }, [basket])
+    }, [cart])
 
     console.log('THE SECRET IS >>>', clientSecret)
     console.log('👱', user)
@@ -57,7 +57,7 @@ function Payment() {
               .collection('orders')
               .doc(paymentIntent.id)
               .set({
-                  basket: basket,
+                  cart: cart,
                   amount: paymentIntent.amount,
                   created: paymentIntent.created
               })
@@ -67,7 +67,7 @@ function Payment() {
             setProcessing(false)
 
             dispatch({
-                type: 'EMPTY_BASKET'
+                type: 'EMPTY_CART'
             })
 
             history.replace('/orders')
@@ -87,7 +87,7 @@ function Payment() {
             <div className='payment__container'>
                 <h1>
                     Checkout (
-                        <Link to="/checkout">{basket?.length} items</Link>
+                        <Link to="/checkout">{cart?.length} items</Link>
                         )
                 </h1>
 
@@ -99,8 +99,8 @@ function Payment() {
                     </div>
                     <div className='payment__address'>
                         <p>{user?.email}</p>
-                        <p>123 React Lane</p>
-                        <p>Los Angeles, CA</p>
+                        <p>123 Amazon ST</p>
+                        <p>San Diego, CA</p>
                     </div>
                 </div>
 
@@ -110,7 +110,7 @@ function Payment() {
                         <h3>Review items and delivery</h3>
                     </div>
                     <div className='payment__items'>
-                        {basket.map(item => (
+                        {cart.map(item => (
                             <CheckoutProduct
                                 id={item.id}
                                 title={item.title}
@@ -140,7 +140,7 @@ function Payment() {
                                             <h3>Order Total: {value}</h3>
                                         )}
                                         decimalScale={2}
-                                        value={getBasketTotal(basket)}
+                                        value={getCartTotal(cart)}
                                         displayType={"text"}
                                         thousandSeparator={true}
                                         prefix={"$"}
